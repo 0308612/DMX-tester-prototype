@@ -1,45 +1,39 @@
 import RPi.GPIO as GPIO
+import time
 
 GPIO.setmode(GPIO.BCM)
-GPIO.setwarnings(False)
 
-Row1 = 26
-Row2 = 6
-Row3 = 5
-Row4 = 16
+Row_pins = [9, 22, 27, 17]
+Col_pins = [16, 5, 6, 26]
 
-Column1 = 25
-Column2 = 23
-Column3 = 24
-Column4 = 9
+key_matrix = [
+    ['1','2','3','A'],
+    ['4','5','6','B'],
+    ['7','8','9','C'],
+    ['*','0','#','D']
+]
 
-GPIO.setup(Row1, GPIO.OUT)
-GPIO.setup(Row2, GPIO.OUT)
-GPIO.setup(Row3, GPIO.OUT)
-GPIO.setup(Row4, GPIO.OUT)
+for row in Row_pins:
+     GPIO.setup(row, GPIO.OUT)
+     GPIO.output(row, GPIO.LOW)
 
-GPIO.setup(Column1, GPIO.IN , pull_up_down = GPIO.PUD_DOWN)
-GPIO.setup(Column2, GPIO.IN , pull_up_down = GPIO.PUD_DOWN)
-GPIO.setup(Column3, GPIO.IN , pull_up_down = GPIO.PUD_DOWN)
-GPIO.setup(Column4, GPIO.IN , pull_up_down = GPIO.PUD_DOWN)
+for col in Col_pins:
+     GPIO.setup(col, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
-def readLine(line, characters):
-    GPIO.output(line, GPIO.HIGH)
-    if(GPIO.input(Column1) == 1):
-        print(characters[0])
-    if(GPIO.input(Column2) == 2):
-            print(characters[1])
-    if(GPIO.input(Column3) == 3):
-        print(characters[2])
-    if(GPIO.input(Column4) == 4):
-        print(characters[3])
-    GPIO.output(line, GPIO.LOW)
+print("keyboard scanner ready")
 
 try:
      while True:
-        readLine(Row1, ["1","2","3","A"])
-        readLine(Row2, ["4","5","6","B"])
-        readLine(Row3, ["7","8","9","C"])
-        readLine(Row4, ["*","0","#","D"])
-except:
-     print("\nApp stopped!")
+          for r_idx, Row_pins in enumerate(Row_pins):
+                GPIO.output(Row_pins, GPIO.HIGH)
+                for c_idx, Col_pins in enumerate(Col_pins):
+                    if GPIO.input(Col_pins) == GPIO.HIGH:
+                        print(f"key pressed: {key_matrix[r_idx][c_idx]}")
+                        while GPIO.input(Col_pins) == GPIO.HIGH:
+                            time.sleep(0.05)
+                GPIO.output(Row_pins, GPIO.LOW)
+                time.sleep(0.02)  
+
+except KeyboardInterrupt:
+     print("\ncleaning up")
+     GPIO.cleanup()
