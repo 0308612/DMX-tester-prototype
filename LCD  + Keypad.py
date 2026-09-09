@@ -2,96 +2,95 @@ import RPi.GPIO as GPIO
 import time
 from rpi_lcd import LCD
 
+# Initialize LCD
 lcd = LCD(0x3f, 1, 16, 2, True)
 
+# Setup GPIO
 GPIO.setmode(GPIO.BCM)
-
 Col_pins = [9, 22, 27, 17]
 Row_pins = [16, 5, 6, 26]
 
-Keypad_Pressed = -1
+# Map your layout strictly to match rows and columns
+# Matrix: [Col 0, Col 1, Col 2, Col 3] for each Row
+keypad_map = [
+    ["1", "4", "7", "*"],  # Row 0
+    ["2", "5", "8", "0"],  # Row 1
+    ["3", "6", "9", "#"],  # Row 2
+    ["A", "B", "C", "D"]   # Row 3
+]
+
 Input = ""
 
+# Configure Rows as Inputs with Pull-Down resistors
 for row in Row_pins:
-     GPIO.setup(row, GPIO.IN, pull_up_down= GPIO.PUD_DOWN)
+    GPIO.setup(row, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
+# Configure Columns as Outputs, set to LOW initially
 for col in Col_pins:
-     GPIO.setup(col, GPIO.OUT)
+    GPIO.setup(col, GPIO.OUT)
+    GPIO.output(col, GPIO.LOW)
 
-def keypadCallback(channel):
-     global Keypad_Pressed
-     if Keypad_Pressed == -1:
-          Keypad_Pressed = channel
+def update_lcd():
+    """Prints the current string to the LCD."""
+    print(f"Current Input: {Input}")
+    lcd.clear()
+    lcd.text(Input, 1, 'center')
 
-GPIO.add_event_detect(Row_pins[0], GPIO.RISING, callback=keypadCallback)
-GPIO.add_event_detect(Row_pins[1], GPIO.RISING, callback=keypadCallback)
-GPIO.add_event_detect(Row_pins[2], GPIO.RISING, callback=keypadCallback)
-GPIO.add_event_detect(Row_pins[3], GPIO.RISING, callback=keypadCallback)
-
-def setAllLines(state):
-     GPIO.output(Col_pins[0], state)
-     GPIO.output(Col_pins[1], state)
-     GPIO.output(Col_pins[2], state)
-     GPIO.output(Col_pins[3], state)
-
-def checkSpecialKeys():
-     global Input
-     pressed = False
-
-     GPIO.output(Col_pins[3], GPIO.HIGH)
-
-     if GPIO.input(Row_pins[2]) == 1:
-          print("entered")
-          pressed = True
-
-     if not pressed and GPIO.input(Row_pins[0]) == 1:
-          print("input reset")
-          pressed = True
-
-     GPIO.output(Col_pins[3], GPIO.LOW)
-
-     if pressed:
-          Input = ""
-
-
-     return pressed
-
-def readLine(line, characters):
-     global Input
-
-     GPIO.output(line, GPIO.HIGH)
-     if GPIO.input(Row_pins[0]) == 1:
-          Input = Input + characters[0]
-     if GPIO.input(Row_pins[1]) == 1:
-          Input = Input + characters[1]
-     if GPIO.input(Row_pins[2]) == 1:
-          Input = Input + characters[2]
-     if GPIO.input(Row_pins[3]) == 1:
-          Input = Input + characters[3]
-     GPIO.output(line, GPIO.LOW)
+def scan_keypad():
+    """Scans the matrix to find which exact key was pressed."""
+    global Input
+    
+    for col_idx, col in enumerate(Col_pins):
+        # Set one column HIGH at a time
+        GPIO.output(col, GPIO.HIGH)
+        
+        for row_idx, row in enumerate(Row_pins):
+            if GPIO.input(row) == GPIO.HIGH:
+                key = keypad_map[row_idx][col_idx]
+                
+                # Handle special keys
+                if key == '#':      # Action key (Enter)
+                    print("Entered!")
+                    Input = ""
+                elif key == '*':    # Reset key
+                    print("Input reset!")
+                    Input = ""
+                else:               # Regular character tracking
+                    Input += key
+                
+                update_lcd()
+                
+                # Debounce: Wait until the key is released before moving on
+                while GPIO.input(row) == GPIO.HIGH:
+                    time.sleep(0.05)
+                
+                GPIO.output(col, GPIO.LOW)
+                return
+                
+        GPIO.output(col, GPIO.LOW)
 
 try:
-     while True:
-          if Keypad_Pressed != -1:
-               setAllLines(GPIO.HIGH)
-               if GPIO.input(Keypad_Pressed) == 0:
-                    Keypad_Pressed = -1
-               else:
-                    time.sleep(0.1)
-          else:
-               if not checkSpecialKeys():
-                    readLine(Col_pins[0], ["1","2","3","A"])
-                    readLine(Col_pins[1], ["4","5","6","B"])
-                    readLine(Col_pins[2], ["7","8","9","C"])
-                    readLine(Col_pins[3], ["*","0","#","D"])
-                    time.sleep(0.1)
-               else:
-                    time.sleep(0.1)
-          
-except KeyboardInterrupt:
-     print("\ncleaning up")
-     GPIO.cleanup()
+    print("Keypad ready. Press keys...")
+    while True:
+        # Keep columns HIGH so any button press pulls a row HIGH
+        for col in Col_pins:
+            GPIO.output(col, GPIO.HIGH)
+            
+        # Poll rows for a press
+        pressed = False
+        for row in Row_pins:
+            if GPIO.input(row) == GPIO.HIGH:
+                pressed = True
+                break
+                
+        if pressed:
+            # Drop all columns back down to prepare for a clean column-by-column scan
+            for col in Col_pins:
+                GPIO.output(col, GPIO.LOW)
+            scan_keypad()
+            
+        time.sleep(0.1)
 
-def LCDScreen():
-     print(Input)
-     lcd.text(str(Input), 1, 'center')
+except KeyboardInterrupt:
+    print("\nCleaning up GPIO...")
+    GPIO.cleanup()
