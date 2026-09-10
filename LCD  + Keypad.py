@@ -13,10 +13,10 @@ Row_pins = [16, 5, 6, 26]
 # Map your layout strictly to match rows and columns
 # Matrix: [Col 0, Col 1, Col 2, Col 3] for each Row
 keypad_map = [
-    ["1", "4", "7", "*"],  # Row 0
-    ["2", "5", "8", "0"],  # Row 1
-    ["3", "6", "9", "#"],  # Row 2
-    ["A", "B", "C", "D"]   # Row 3
+    ["1", "4", "7", "A"],  # Row 0
+    ["2", "5", "8", "B"],  # Row 1
+    ["3", "6", "9", "C"],  # Row 2
+    ["*", "0", "#", "D"]   # Row 3
 ]
 
 Input = ""
