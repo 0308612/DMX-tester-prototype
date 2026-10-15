@@ -31,10 +31,11 @@ for col in Col_pins:
     GPIO.output(col, GPIO.LOW)
 
 def update_lcd():
-    """Prints the current string to the LCD."""
-    print(f"Current Input: {Input}")
-    lcd.clear()
-    lcd.text(Input, 1, 'center')
+    
+    # """Prints the current string to the LCD."""
+    # print(f"Current Input: {Input}")
+    # lcd.clear()
+    # lcd.text(Input, 1)
 
 def scan_keypad():
     """Scans the matrix to find which exact key was pressed."""
