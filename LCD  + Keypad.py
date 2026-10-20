@@ -13,13 +13,15 @@ Row_pins = [16, 5, 6, 26]
 # Map your layout strictly to match rows and columns
 # Matrix: [Col 0, Col 1, Col 2, Col 3] for each Row
 keypad_map = [
-    ["1", "4", "7", "A"],  # Row 0
-    ["2", "5", "8", "B"],  # Row 1
-    ["3", "6", "9", "C"],  # Row 2
-    ["*", "0", "#", "D"]   # Row 3
+    ["1", "4", "7", "*"],  # Row 0
+    ["2", "5", "8", "0"],  # Row 1
+    ["3", "6", "9", "#"],  # Row 2
+    ["A", "B", "C", "D"]   # Row 3
 ]
 
 Input = ""
+Screen = 1
+entered = False
 
 # Configure Rows as Inputs with Pull-Down resistors
 for row in Row_pins:
@@ -31,7 +33,10 @@ for col in Col_pins:
     GPIO.output(col, GPIO.LOW)
 
 def update_lcd():
-    
+    if Screen == 1:
+        lcd.text("Press # to pick your fixture", 1, 'center')
+    if entered == True:
+        lcd.text("1: Profile    2: Frensel   3: wall washer  4: dimmer  5: par can", 1, 'center')
     # """Prints the current string to the LCD."""
     # print(f"Current Input: {Input}")
     # lcd.clear()
@@ -44,12 +49,11 @@ def scan_keypad():
     for col_idx, col in enumerate(Col_pins):
         # Set one column HIGH at a time
         GPIO.output(col, GPIO.HIGH)
-        
         for row_idx, row in enumerate(Row_pins):
             if GPIO.input(row) == GPIO.HIGH:
                 key = keypad_map[row_idx][col_idx]
                 
-                # Handle special keys
+                # Handle special ke
                 if key == '#':      # Action key (Enter)
                     print("Entered!")
                     Input = ""
@@ -59,7 +63,6 @@ def scan_keypad():
                 else:               # Regular character tracking
                     Input += key
                 
-                update_lcd()
                 
                 # Debounce: Wait until the key is released before moving on
                 while GPIO.input(row) == GPIO.HIGH:
@@ -73,6 +76,7 @@ def scan_keypad():
 try:
     print("Keypad ready. Press keys...")
     while True:
+        update_lcd()
         # Keep columns HIGH so any button press pulls a row HIGH
         for col in Col_pins:
             GPIO.output(col, GPIO.HIGH)
