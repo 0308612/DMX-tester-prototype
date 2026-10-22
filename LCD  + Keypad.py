@@ -35,8 +35,13 @@ for col in Col_pins:
 def update_lcd():
     if Screen == 1:
         lcd.text("Press # to pick your fixture", 1, 'center')
-    if entered == True:
-        lcd.text("1: Profile    2: Frensel   3: wall washer  4: dimmer  5: par can", 1, 'center')
+        if entered == True:
+            entered = False
+            Screen = 2
+            lcd.text("1: Profile    2: Fresnel     #: Next page, 1, 'center') #3: wall washer  4: dimmer  5: par can"
+    if Screen == 2:
+        if entered == True:
+            
     # """Prints the current string to the LCD."""
     # print(f"Current Input: {Input}")
     # lcd.clear()
@@ -56,6 +61,7 @@ def scan_keypad():
                 # Handle special ke
                 if key == '#':      # Action key (Enter)
                     print("Entered!")
+                    entered = True
                     Input = ""
                 elif key == '*':    # Reset key
                     print("Input reset!")
