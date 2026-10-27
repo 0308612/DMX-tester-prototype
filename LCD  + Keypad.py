@@ -32,22 +32,22 @@ for col in Col_pins:
     GPIO.setup(col, GPIO.OUT)
     GPIO.output(col, GPIO.LOW)
 
-def update_lcd():
+def update_lcd(Screen, entered):
     if Screen == 1:
         lcd.text("Press # to pick your fixture", 1, 'center')
         if entered == True:
             entered = False
             Screen = 2
-            lcd.text("1: Profile    2: Fresnel     #: Next page, 1, 'center') #3: wall washer  4: dimmer  5: par can"
+            lcd.text("1: Profile    2: Fresnel     #: Next page", 1, 'center')
     if Screen == 2:
         if entered == True:
-            
+            lcd.text("#3: wall washer  4: dimmer  5: par can", 1, 'center')
     # """Prints the current string to the LCD."""
     # print(f"Current Input: {Input}")
     # lcd.clear()
     # lcd.text(Input, 1)
 
-def scan_keypad():
+def scan_keypad(entered):
     """Scans the matrix to find which exact key was pressed."""
     global Input
     
@@ -58,7 +58,7 @@ def scan_keypad():
             if GPIO.input(row) == GPIO.HIGH:
                 key = keypad_map[row_idx][col_idx]
                 
-                # Handle special ke
+                # Handle special key
                 if key == '#':      # Action key (Enter)
                     print("Entered!")
                     entered = True
@@ -82,7 +82,7 @@ def scan_keypad():
 try:
     print("Keypad ready. Press keys...")
     while True:
-        update_lcd()
+        update_lcd(Screen, entered)
         # Keep columns HIGH so any button press pulls a row HIGH
         for col in Col_pins:
             GPIO.output(col, GPIO.HIGH)
@@ -98,7 +98,7 @@ try:
             # Drop all columns back down to prepare for a clean column-by-column scan
             for col in Col_pins:
                 GPIO.output(col, GPIO.LOW)
-            scan_keypad()
+            scan_keypad(entered)
             
         time.sleep(0.1)
 
