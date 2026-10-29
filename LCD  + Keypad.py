@@ -21,7 +21,7 @@ keypad_map = [
 
 Input = ""
 Screen = 1
-entered = False
+
 
 # Configure Rows as Inputs with Pull-Down resistors
 for row in Row_pins:
@@ -38,21 +38,29 @@ def update_lcd(Screen, entered):
         if entered == True:
             entered = False
             Screen = 2
-            lcd.text("1: Profile    2: Fresnel     #: Next page", 1, 'center')
+            lcd.clear()
     if Screen == 2:
+        lcd.text("1: Profile    2: Fresnel  #: Next page", 1, 'center')
         if entered == True:
-            lcd.text("#3: wall washer  4: dimmer  5: par can", 1, 'center')
+            Screen = 3
+            lcd.clear()
+            entered = False
+    if Screen == 3:
+        lcd.clear()
+        print("why wont this work!!!!!!")
+        #lcd.text("#3: wall washer  4: dimmer  5: par can", 1, 'center')
     # """Prints the current string to the LCD."""
     # print(f"Current Input: {Input}")
     # lcd.clear()
     # lcd.text(Input, 1)
 
-def scan_keypad(entered):
+def scan_keypad(enter):
     """Scans the matrix to find which exact key was pressed."""
     global Input
     
     for col_idx, col in enumerate(Col_pins):
         # Set one column HIGH at a time
+        
         GPIO.output(col, GPIO.HIGH)
         for row_idx, row in enumerate(Row_pins):
             if GPIO.input(row) == GPIO.HIGH:
@@ -61,7 +69,8 @@ def scan_keypad(entered):
                 # Handle special key
                 if key == '#':      # Action key (Enter)
                     print("Entered!")
-                    entered = True
+                    enter = True
+                    
                     Input = ""
                 elif key == '*':    # Reset key
                     print("Input reset!")
@@ -75,11 +84,12 @@ def scan_keypad(entered):
                     time.sleep(0.05)
                 
                 GPIO.output(col, GPIO.LOW)
-                return
+                return enter
                 
         GPIO.output(col, GPIO.LOW)
 
 try:
+    entered = False
     print("Keypad ready. Press keys...")
     while True:
         update_lcd(Screen, entered)
@@ -98,7 +108,7 @@ try:
             # Drop all columns back down to prepare for a clean column-by-column scan
             for col in Col_pins:
                 GPIO.output(col, GPIO.LOW)
-            scan_keypad(entered)
+            entered = scan_keypad(entered)
             
         time.sleep(0.1)
 
